@@ -1,6 +1,8 @@
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import javax.swing.*;
+import java.io.File;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.io.FileWriter;
@@ -14,6 +16,7 @@ public class RioLogParser{
     
 
     public static void main(String[] args){
+        System.err.println(SelectFile());
         String finishedText="";
         String text =readFile();
         int currentIndex =0;
@@ -28,13 +31,9 @@ public class RioLogParser{
         }catch (IOException e){
             e.printStackTrace();
         }*/
-        
-        while(true){
-            LogPositionData data= readNext(currentIndex, text);
-            if(data==null){
-                finishedText=finishedText.concat(addData(finishedText, logSection));
-                break;
-            }
+        LogPositionData data;
+        while((data = readNext(currentIndex, text)) != null){
+
             if(data.insideText.equals("TagVersion")){
                 finishedText=finishedText.concat(addData(finishedText, logSection));
                 logSection.clear();
@@ -42,13 +41,49 @@ public class RioLogParser{
             currentIndex=data.endPosition;
             logSection.put(data.insideText,data.outsideText);
         }
+                    
+        finishedText=finishedText.concat(addData(finishedText, logSection));
         writeFile(finishedText, newLogFilePath);
     }
 
+    public static String SelectFile(){
+        /*File startFile = new File("C:\\Users\\Public\\Documents\\FRC");
+        try{
+            System.out.println(startFile.getAbsolutePath());
+            System.out.println(startFile.exists());
+            ProcessBuilder pb = new ProcessBuilder("explorer.exe","/open,"+startFile.getAbsolutePath());
+        pb.start();
+        
+        
+        }catch(Exception e){
+            e.printStackTrace();
+        }*/
+        
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select file");
+
+        File startFile=new File("C:\\Users\\Public\\Documents\\FRC\\Log Files\\DSLogs");
+        fileChooser.setCurrentDirectory(startFile);
+
+        int result =fileChooser.showOpenDialog(null);
+        
+        if(result==JFileChooser.APPROVE_OPTION){
+            File selectedFile = fileChooser.getSelectedFile();
+            String filePath=selectedFile.getAbsolutePath();
+            return filePath;
+            
+        }else{
+            System.err.println("File selection canceled");
+            return "There was an error";
+        }
+
+        
+    }
+
     public static String addData(String finishedText,HashMap<String,String> data){
-        String lineToAdd="   ";
+        String lineToAdd="";
         if(data.containsKey("time")){
-            lineToAdd= lineToAdd.concat("<time> "+data.get("time"));
+            lineToAdd= lineToAdd.concat(data.get("time"));
         }
         if(data.containsKey("message")){
             lineToAdd=lineToAdd.concat(" <message> "+data.get("message"));
